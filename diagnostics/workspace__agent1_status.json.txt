@@ -1,0 +1,31 @@
+{
+  "agent": "agent1",
+  "pid": 21400,
+  "state": "waiting",
+  "phase": "idle",
+  "time": "2026-07-06 20:34:16",
+  "last_error": null,
+  "updated_at": "2026-07-06 20:34:16",
+  "updated_ts": 1783341256.0590305,
+  "version": "v11_local_agent_v2",
+  "page_title": "Agent1 启动诊断",
+  "page_url": "https://chatgpt.com/c/6a4b4db3-3120-83e8-9572-f849d18c875d",
+  "layout": {
+    "innerWidth": 1010,
+    "innerHeight": 764,
+    "devicePixelRatio": 1.5749999284744263,
+    "visualScale": 1
+  },
+  "protocol": "LOCAL_AGENT_V2",
+  "latest_user_dom_index": 51,
+  "assistant_messages_after_latest_user": 0,
+  "latest_assistant_dom_index": null,
+  "selected_assistant_offset_from_end": null,
+  "skipped_newer_assistant_messages": 0,
+  "no_v2_code_block_after_latest_user": true,
+  "latest_assistant_code_blocks": 0,
+  "latest_assistant_v2_code_blocks": 0,
+  "pending_v2": false,
+  "legacy_json_enabled": false,
+  "processed_count": 280
+}
