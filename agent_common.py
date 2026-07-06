@@ -273,17 +273,35 @@ HEARTBEAT_DECISIONS = WORKSPACE / "heartbeat_decisions.jsonl"
 
 
 def tail_file(path: Path, limit: int = 4000) -> str:
+    # SELF_UPDATE_CHUNK_PROTOCOL_V1_MARKER robust utf16/nul safe tail
     try:
         p = Path(path)
         if not p.exists():
             return ""
-        data = p.read_text(encoding="utf-8", errors="replace")
-        if len(data) <= limit:
-            return data
-        return data[-limit:]
+        data = p.read_bytes()
+        if not data:
+            return ""
+        sample = data[:4096]
+        nul_count = sample.count(b"\x00")
+        text = ""
+        if data.startswith(b"\xff\xfe") or data.startswith(b"\xfe\xff"):
+            try:
+                text = data.decode("utf-16", errors="replace")
+            except Exception:
+                text = data.decode("utf-8", errors="replace")
+        elif nul_count > max(8, len(sample) // 8):
+            try:
+                text = data.decode("utf-16-le", errors="replace")
+            except Exception:
+                text = data.decode("utf-8", errors="replace")
+        else:
+            text = data.decode("utf-8", errors="replace")
+        text = text.replace("\x00", "")
+        if len(text) <= limit:
+            return text
+        return text[-limit:]
     except Exception:
         return ""
-
 
 def read_live_task(default=None) -> Dict[str, Any]:
     return read_json(LIVE_TASK_DIR / "current.json", default=default or {}) or {}

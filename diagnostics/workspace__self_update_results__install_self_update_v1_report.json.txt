@@ -1,0 +1,82 @@
+{
+  "version": "install_self_update_v1_20260706",
+  "root": "D:\\chatgpt-browser-agent",
+  "package_dir": "D:\\chatgpt-browser-agent-update\\chatgpt_browser_agent_self_update_v1",
+  "started_at": "2026-07-06 20:58:21",
+  "status": "ok",
+  "steps": [
+    {
+      "step": "backup",
+      "path": "D:\\chatgpt-browser-agent\\agent1.py",
+      "backup": "D:\\chatgpt-browser-agent\\backups\\install_self_update_v1\\20260706_205821\\agent1.py"
+    },
+    {
+      "step": "backup",
+      "path": "D:\\chatgpt-browser-agent\\agent_common.py",
+      "backup": "D:\\chatgpt-browser-agent\\backups\\install_self_update_v1\\20260706_205821\\agent_common.py"
+    },
+    {
+      "step": "backup",
+      "path": "D:\\chatgpt-browser-agent\\agent_update_manager.py",
+      "backup": null
+    },
+    {
+      "step": "copy_manager",
+      "path": "D:\\chatgpt-browser-agent\\agent_update_manager.py",
+      "status": "copied",
+      "sha256": "b58f0e7e4e6f8bf43b820652adbd116d0f13dfe3b8910490b33817c69ef2b044",
+      "bytes": 21632
+    },
+    {
+      "step": "patch_agent_common",
+      "path": "D:\\chatgpt-browser-agent\\agent_common.py",
+      "status": "patched",
+      "before_sha256": "940bef5095e8cd2209e46a1e4883457e82ab85748cc5032c32058321aa38207f",
+      "after_sha256": "933e081be627ac8c47dfdf8a7e2025250386915379c08dbffa761f1387db8c54"
+    },
+    {
+      "step": "patch_agent1",
+      "path": "D:\\chatgpt-browser-agent\\agent1.py",
+      "status": "patched",
+      "before_sha256": "6ba090551a23dd73a224d0014b22e20305ed92c5ec3153487cf78ed5a8b67107",
+      "after_sha256": "d3718142d9a9af8468bce2eca2a7ae711355cb98ee791e20af44bebb480fac75"
+    },
+    {
+      "step": "compile",
+      "results": [
+        {
+          "path": "agent_update_manager.py",
+          "absolute": "D:\\chatgpt-browser-agent\\agent_update_manager.py",
+          "status": "ok"
+        },
+        {
+          "path": "agent_common.py",
+          "absolute": "D:\\chatgpt-browser-agent\\agent_common.py",
+          "status": "ok"
+        },
+        {
+          "path": "agent1.py",
+          "absolute": "D:\\chatgpt-browser-agent\\agent1.py",
+          "status": "ok"
+        },
+        {
+          "path": "agent2.py",
+          "absolute": "D:\\chatgpt-browser-agent\\agent2.py",
+          "status": "ok"
+        },
+        {
+          "path": "status_ui.py",
+          "absolute": "D:\\chatgpt-browser-agent\\status_ui.py",
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "step": "restart",
+      "scheduled": true,
+      "script": "D:\\chatgpt-browser-agent\\workspace\\restart_scripts\\restart_after_install_self_update_v1_20260706_205821.ps1",
+      "delay_sec": 5
+    }
+  ],
+  "finished_at": "2026-07-06 20:58:21"
+}

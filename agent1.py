@@ -265,12 +265,12 @@ def code_has_local_agent_v2_end_marker(code: str) -> bool:
 
 
 def parse_local_agent_v2_code(code: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    # SELF_UPDATE_CHUNK_PROTOCOL_V1_MARKER
     try:
         text = str(code or "").replace("\r\n", "\n").replace("\r", "\n")
         lines = text.split("\n")
         if not lines or lines[0] != LOCAL_AGENT_V2:
             return None, None
-
         sep_index = None
         for i, line in enumerate(lines[1:], start=1):
             if line == "---":
@@ -278,12 +278,26 @@ def parse_local_agent_v2_code(code: str) -> Tuple[Optional[Dict[str, Any]], Opti
                 break
         if sep_index is None:
             return None, "missing --- separator"
-
         header_lines = lines[1:sep_index]
         body = "\n".join(lines[sep_index + 1:])
         body, has_end_marker = strip_local_agent_v2_end_marker(body)
         if not has_end_marker:
             return None, LOCAL_AGENT_V2_END + " missing"
+
+        extra_headers = {
+            "package_id",
+            "chunk_index",
+            "chunk_count",
+            "chunk_sha256",
+            "payload_sha256",
+            "payload_kind",
+            "restart",
+            "restart_delay_sec",
+            "git_sync",
+            "git_push",
+            "commit_message",
+        }
+        allowed_headers = set(LOCAL_AGENT_V2_ALLOWED_HEADERS) | extra_headers
         headers: Dict[str, str] = {}
         for raw_line in header_lines:
             line = raw_line.strip()
@@ -294,7 +308,7 @@ def parse_local_agent_v2_code(code: str) -> Tuple[Optional[Dict[str, Any]], Opti
             key, value = line.split("=", 1)
             key = key.strip()
             value = value.strip()
-            if key not in LOCAL_AGENT_V2_ALLOWED_HEADERS:
+            if key not in allowed_headers:
                 return None, "unsupported header: " + key
             if key in headers:
                 return None, "duplicate header: " + key
@@ -303,7 +317,6 @@ def parse_local_agent_v2_code(code: str) -> Tuple[Optional[Dict[str, Any]], Opti
         for required in ("task_id", "type", "timeout"):
             if not headers.get(required):
                 return None, "missing required header: " + required
-
         task_id = sanitize_task_id(headers["task_id"])
         action_type = headers["type"].strip()
         timeout = int(headers["timeout"])
@@ -314,6 +327,18 @@ def parse_local_agent_v2_code(code: str) -> Tuple[Optional[Dict[str, Any]], Opti
         max_output_chars = int(headers.get("max_output_chars") or CFG.get("max_output_chars", 20000) or 20000)
         max_output_chars = max(1000, min(max_output_chars, 200000))
         cwd = headers.get("cwd") or str(ROOT_DIR)
+
+        def _ps_quote(value: Any) -> str:
+            return "'" + str(value).replace("'", "''") + "'"
+
+        def _safe_package_id(value: str) -> str:
+            value = str(value or "").strip()
+            if not re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", value):
+                raise ValueError("package_id must match [A-Za-z0-9_.-]{1,120}")
+            return value
+
+        def _manager_path() -> Path:
+            return ROOT_DIR / "agent_update_manager.py"
 
         if action_type == "run_powershell":
             if not body.strip():
@@ -348,6 +373,118 @@ def parse_local_agent_v2_code(code: str) -> Tuple[Optional[Dict[str, Any]], Opti
                 "protocol": LOCAL_AGENT_V2,
                 "dry_run": parse_bool(headers.get("dry_run"), False),
             }
+        elif action_type == "stage_update_chunk":
+            try:
+                package_id = _safe_package_id(headers.get("package_id") or "")
+                chunk_index = int(headers.get("chunk_index") or "0")
+                chunk_count = int(headers.get("chunk_count") or "0")
+                chunk_sha256 = str(headers.get("chunk_sha256") or "").strip().lower()
+                if chunk_index < 1 or chunk_count < 1 or chunk_index > chunk_count:
+                    return None, "chunk_index/chunk_count out of range"
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", chunk_sha256):
+                    return None, "chunk_sha256 must be a 64-char hex digest"
+                chunk_text = "".join(str(body or "").split())
+                if not chunk_text:
+                    return None, "stage_update_chunk body is empty"
+                incoming_dir = ROOT_DIR / "workspace" / "staged_updates" / package_id / "incoming"
+                incoming_dir.mkdir(parents=True, exist_ok=True)
+                incoming_path = incoming_dir / ("chunk_%05d.b64" % chunk_index)
+                atomic_write_text(incoming_path, chunk_text, encoding="ascii")
+                manager = _manager_path()
+                if not manager.exists():
+                    return None, "agent_update_manager.py is missing; install self-update package first"
+                command = "\n".join([
+                    "$ErrorActionPreference = 'Stop'",
+                    "& " + _ps_quote(sys.executable) + " " + _ps_quote(manager) + " stage --root " + _ps_quote(ROOT_DIR) + " --package-id " + _ps_quote(package_id) + " --chunk-index " + str(chunk_index) + " --chunk-count " + str(chunk_count) + " --chunk-sha256 " + _ps_quote(chunk_sha256) + " --b64-file " + _ps_quote(incoming_path),
+                ])
+                action = {
+                    "type": "run_powershell",
+                    "command": command,
+                    "cwd": str(ROOT_DIR),
+                    "timeout": timeout,
+                    "max_output_chars": max_output_chars,
+                    "task_id": task_id,
+                    "protocol": LOCAL_AGENT_V2,
+                    "allow_write": True,
+                    "soft_check_after_sec": headers.get("soft_check_after_sec"),
+                    "heartbeat_report": parse_bool(headers.get("heartbeat_report"), False),
+                }
+            except Exception as exc:
+                return None, type(exc).__name__ + ": " + str(exc)
+        elif action_type == "inspect_staged_update":
+            try:
+                package_id = _safe_package_id(headers.get("package_id") or "")
+                manager = _manager_path()
+                if not manager.exists():
+                    return None, "agent_update_manager.py is missing; install self-update package first"
+                command = "\n".join([
+                    "$ErrorActionPreference = 'Stop'",
+                    "& " + _ps_quote(sys.executable) + " " + _ps_quote(manager) + " inspect --root " + _ps_quote(ROOT_DIR) + " --package-id " + _ps_quote(package_id),
+                ])
+                action = {
+                    "type": "run_powershell",
+                    "command": command,
+                    "cwd": str(ROOT_DIR),
+                    "timeout": timeout,
+                    "max_output_chars": max_output_chars,
+                    "task_id": task_id,
+                    "protocol": LOCAL_AGENT_V2,
+                    "allow_write": False,
+                    "soft_check_after_sec": headers.get("soft_check_after_sec"),
+                    "heartbeat_report": parse_bool(headers.get("heartbeat_report"), False),
+                }
+            except Exception as exc:
+                return None, type(exc).__name__ + ": " + str(exc)
+        elif action_type == "apply_staged_update":
+            try:
+                package_id = _safe_package_id(headers.get("package_id") or "")
+                payload_sha256 = str(headers.get("payload_sha256") or "").strip().lower()
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", payload_sha256):
+                    return None, "payload_sha256 must be a 64-char hex digest"
+                request: Dict[str, Any] = {}
+                if body.strip():
+                    parsed_body = json.loads(body)
+                    if not isinstance(parsed_body, dict):
+                        return None, "apply_staged_update body JSON must be an object"
+                    request.update(parsed_body)
+                request.setdefault("package_id", package_id)
+                request.setdefault("payload_sha256", payload_sha256)
+                request.setdefault("payload_kind", headers.get("payload_kind") or "zip")
+                if headers.get("restart") is not None:
+                    request["restart"] = parse_bool(headers.get("restart"), False)
+                if headers.get("restart_delay_sec"):
+                    request["restart_delay_sec"] = int(headers.get("restart_delay_sec") or "12")
+                if headers.get("git_sync") is not None or headers.get("git_push") is not None or headers.get("commit_message"):
+                    request.setdefault("git_sync", {})
+                    request["git_sync"]["enabled"] = parse_bool(headers.get("git_sync"), False)
+                    request["git_sync"]["push"] = parse_bool(headers.get("git_push"), True)
+                    if headers.get("commit_message"):
+                        request["git_sync"]["commit_message"] = headers.get("commit_message")
+                req_dir = ROOT_DIR / "workspace" / "staged_updates" / package_id / "requests"
+                req_dir.mkdir(parents=True, exist_ok=True)
+                req_path = req_dir / ("apply_" + task_id + ".json")
+                atomic_write_text(req_path, json.dumps(request, ensure_ascii=False, indent=2), encoding="utf-8")
+                manager = _manager_path()
+                if not manager.exists():
+                    return None, "agent_update_manager.py is missing; install self-update package first"
+                command = "\n".join([
+                    "$ErrorActionPreference = 'Stop'",
+                    "& " + _ps_quote(sys.executable) + " " + _ps_quote(manager) + " apply --root " + _ps_quote(ROOT_DIR) + " --package-id " + _ps_quote(package_id) + " --payload-sha256 " + _ps_quote(payload_sha256) + " --payload-kind zip --request-file " + _ps_quote(req_path),
+                ])
+                action = {
+                    "type": "run_powershell",
+                    "command": command,
+                    "cwd": str(ROOT_DIR),
+                    "timeout": timeout,
+                    "max_output_chars": max_output_chars,
+                    "task_id": task_id,
+                    "protocol": LOCAL_AGENT_V2,
+                    "allow_write": True,
+                    "soft_check_after_sec": headers.get("soft_check_after_sec"),
+                    "heartbeat_report": parse_bool(headers.get("heartbeat_report"), False),
+                }
+            except Exception as exc:
+                return None, type(exc).__name__ + ": " + str(exc)
         else:
             return None, "unsupported type: " + action_type
 
@@ -359,7 +496,6 @@ def parse_local_agent_v2_code(code: str) -> Tuple[Optional[Dict[str, Any]], Opti
         }, None
     except Exception as exc:
         return None, type(exc).__name__ + ": " + str(exc)
-
 
 def configured_browser_executable() -> Optional[str]:
     # Prefer official stable Google Chrome when available.

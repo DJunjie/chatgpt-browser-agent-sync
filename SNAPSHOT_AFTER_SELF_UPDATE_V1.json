@@ -1,0 +1,103 @@
+{
+  "created_at": "2026-07-06 20:59:56",
+  "source_root": "D:\\chatgpt-browser-agent",
+  "repo_root": "D:\\chatgpt-browser-agent-sync",
+  "files": [
+    {
+      "path": "agent1.py",
+      "status": "copied",
+      "bytes": 120080,
+      "lines": 2843,
+      "sha256": "d3718142d9a9af8468bce2eca2a7ae711355cb98ee791e20af44bebb480fac75"
+    },
+    {
+      "path": "agent2.py",
+      "status": "copied",
+      "bytes": 15620,
+      "lines": 400,
+      "sha256": "c583d8cdc3aeffcf364a88fd33745100ac717ffd1824f3f8411f59263af4437a"
+    },
+    {
+      "path": "agent_common.py",
+      "status": "copied",
+      "bytes": 13748,
+      "lines": 428,
+      "sha256": "933e081be627ac8c47dfdf8a7e2025250386915379c08dbffa761f1387db8c54"
+    },
+    {
+      "path": "agent_update_manager.py",
+      "status": "copied",
+      "bytes": 21632,
+      "lines": 534,
+      "sha256": "b58f0e7e4e6f8bf43b820652adbd116d0f13dfe3b8910490b33817c69ef2b044"
+    },
+    {
+      "path": "status_ui.py",
+      "status": "copied",
+      "bytes": 16396,
+      "lines": 447,
+      "sha256": "43b0ded65c31f9ac56bbdc03bef834f03dfc2ca02bab44455981c6d4a1659f40"
+    },
+    {
+      "path": "README.md",
+      "status": "copied",
+      "bytes": 2092,
+      "lines": 77,
+      "sha256": "01fd40e8444bac1e7ee195372c07dd0ee2c1234c50cfd99b4dd030e6274cc73d"
+    },
+    {
+      "path": "requirements.txt",
+      "status": "copied",
+      "bytes": 20,
+      "lines": 5,
+      "sha256": "7a06c3df51ed2bfcadb257df8f766b6e9bdcf062703bededcf1e5a585b256997"
+    },
+    {
+      "path": "config.json",
+      "status": "copied",
+      "bytes": 1181,
+      "lines": 31,
+      "sha256": "2410c26be9afbc31ab0118421fc1e2a8a876ab0d87e91ddaf3a15b87e9697cea"
+    },
+    {
+      "path": "diagnostics/workspace__self_update_results__install_self_update_v1_report.json.txt",
+      "status": "copied_tail",
+      "source": "workspace/self_update_results/install_self_update_v1_report.json",
+      "bytes": 2707,
+      "lines": 83,
+      "sha256": "2e578aff713c4d131b33a3e7cab97885a57355f946e5e78d6ac41dde1a13b037"
+    },
+    {
+      "path": "diagnostics/workspace__agent1_status.json.txt",
+      "status": "copied_tail",
+      "source": "workspace/agent1_status.json",
+      "bytes": 538,
+      "lines": 21,
+      "sha256": "bad134f1872c6c006bd66241f1b4dbfa23ee1e81be232a5dfc23c047649683e4"
+    },
+    {
+      "path": "diagnostics/workspace__agent2_status.json.txt",
+      "status": "copied_tail",
+      "source": "workspace/agent2_status.json",
+      "bytes": 569,
+      "lines": 20,
+      "sha256": "dff3b9cf103310f36e700734f8af3fd3614c0870bc766271736fedc4afe16d1b"
+    },
+    {
+      "path": "diagnostics/workspace__live_task__current.json.txt",
+      "status": "copied_tail",
+      "source": "workspace/live_task/current.json",
+      "bytes": 4986,
+      "lines": 27,
+      "sha256": "e42bcbd3fec6d92da2b650a41761cbc938dfe32fb2ecbd0a7fe98735f8771375"
+    },
+    {
+      "path": "diagnostics/workspace__live_task__heartbeat.json.txt",
+      "status": "copied_tail",
+      "source": "workspace/live_task/heartbeat.json",
+      "bytes": 4986,
+      "lines": 27,
+      "sha256": "e42bcbd3fec6d92da2b650a41761cbc938dfe32fb2ecbd0a7fe98735f8771375"
+    }
+  ]
+}
