@@ -1,4 +1,4 @@
-﻿# chatgpt-browser-agent-sync
+# chatgpt-browser-agent-sync
 
 This repository contains only sanitized source files for review and repair.
 
