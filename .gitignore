@@ -1,0 +1,15 @@
+﻿__pycache__/
+*.pyc
+*.pyo
+*.log
+*.tmp
+.env
+.env.*
+browser_profile*/
+browser_profile_default_like/
+workspace/
+logs/
+tmp/
+*.zip
+*.7z
+*.rar
